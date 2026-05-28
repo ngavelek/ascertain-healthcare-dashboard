@@ -4,6 +4,13 @@
 
 These instructions apply to all AI coding agents working in this repository.
 
+## Assignment Reference
+
+Before implementing any milestone, read:
+
+```text
+docs/ASSIGNMENT_REFERENCE.md
+
 ## Mission
 
 Build a full-stack healthcare dashboard for the Ascertain Forward Deployed Engineer take-home.

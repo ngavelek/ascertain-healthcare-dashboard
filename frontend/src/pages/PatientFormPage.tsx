@@ -9,11 +9,12 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
   const title = mode === "create" ? "New patient" : "Edit patient";
 
   return (
-    <section className="route-panel">
-      <p className="eyebrow">Patient record</p>
-      <h1>{title}</h1>
-      {id ? <p className="route-copy">{id}</p> : null}
+    <section className="page-section">
+      <div className="page-heading">
+        <p className="eyebrow">Patient record</p>
+        <h1>{title}</h1>
+        {id ? <p>{id}</p> : null}
+      </div>
     </section>
   );
 }
-

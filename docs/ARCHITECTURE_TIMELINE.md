@@ -204,6 +204,55 @@ flowchart LR
 
 ---
 
+### 5. Responsive layout and patient directory
+
+**Commit:** `feat(web): add responsive layout and patient list`
+
+**What changed**
+
+* Added the responsive header, sidebar, and main content shell.
+* Replaced the patients placeholder with a backend-driven directory.
+* Added URL-backed search, status filtering, sorting, page size, and pagination.
+* Added non-blocking search input with deferred URL updates.
+* Added loading, empty, error, and incremental fetching states for the directory.
+
+**Why it mattered**
+
+* Delivered the primary reviewer-visible workflow: finding and opening patient records.
+* Kept search/filter/sort/pagination on the API boundary rather than duplicating it in browser state.
+* Made the layout usable on desktop and lower-resolution screens before adding detail and form flows.
+
+**Requirement coverage**
+
+* Responsive layout with header, sidebar, and main area.
+* Patient list showing name, age, last visit, and status.
+* Search/filter functionality.
+* Sorting.
+* Pagination.
+* Non-blocking search.
+* Meaningful loading, empty, and error states.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend now consumes the patient list endpoint as designed: URL params become typed API params, TanStack Query fetches the current page, and the UI renders list state without owning database-scale behavior.
+
+```mermaid
+flowchart TD
+  Controls[Search Filter Sort Pagination Controls] --> URL[URL Query Params]
+  URL --> QueryKey[TanStack Query Key]
+  QueryKey --> Client[API Client listPatients]
+  Client --> PatientsAPI[GET /patients]
+  PatientsAPI --> Directory[Responsive Patient Table]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

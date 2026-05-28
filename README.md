@@ -2,7 +2,7 @@
 
 A full-stack patient management dashboard for a medical practice, built with React TypeScript, FastAPI, and PostgreSQL.
 
-The app supports patient CRUD, backend-owned search/filter/sort/pagination, operational patient metrics, patient notes, generated patient summaries, responsive routing, metadata-only request logging, and Docker-based local setup.
+The app includes patient CRUD, backend-owned search/filter/sort/pagination, patient notes, deterministic patient summaries, operational status metrics, request logging, and Docker-based local setup.
 
 ## Quick Start
 
@@ -23,32 +23,40 @@ Health:   http://localhost:8000/health
 
 The backend creates tables on startup and seeds 120 synthetic patients when the database is empty.
 
-## Suggested Reviewer Path
+## Reviewer Path
 
 1. Start the app with `docker compose up --build`.
-2. Open the patient directory at `http://localhost:5173/patients`.
-3. Review operational metrics and the patient status breakdown.
-4. Search, filter by status, sort, and paginate.
+2. Open `http://localhost:5173`.
+3. View the patient operational dashboard.
+4. Search, filter by status, sort, and paginate through patients.
 5. Open a patient detail page.
-6. Add a patient note.
+6. Add a clinical note.
 7. View the generated patient summary.
 8. Create a new patient.
-9. Edit the patient, including status, allergies, conditions, date of birth, and last visit date.
+9. Edit patient status, allergies, conditions, date of birth, and last visit date.
 10. Confirm API docs at `http://localhost:8000/docs`.
 
-## Local Development
+## Verification
 
-Backend:
+For full pre-submission verification:
+
+```bash
+make preflight
+```
+
+This runs backend tests, frontend lint/build, Docker Compose validation, container startup, API smoke tests, frontend response checks, and a forbidden tracked-file check.
+
+For local setup without Docker:
 
 ```bash
 cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
-Frontend, in a second terminal:
+In a second terminal:
 
 ```bash
 cd frontend
@@ -58,80 +66,14 @@ npm run dev
 
 By default, local backend development uses SQLite at `backend/dev.db`. Docker uses PostgreSQL through `DATABASE_URL`.
 
-## Verification
-
-The repo includes a root-level `Makefile` for common checks.
-
-Before running `make verify`, create/install the backend virtual environment and frontend dependencies once:
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cd ..
-
-cd frontend
-npm install
-cd ..
-```
-
-Then run:
-
-```bash
-make verify
-```
-
-For the final submission path, run the full Docker-backed preflight:
-
-```bash
-make preflight
-```
-
-Equivalent manual commands:
-
-```bash
-cd backend
-source .venv/bin/activate
-python -m pytest -q
-python -m compileall -q app tests
-cd ..
-```
-
-```bash
-cd frontend
-npm run lint
-npm run build
-cd ..
-```
-
-```bash
-docker compose config
-```
-
-To fully verify the containerized app:
-
-```bash
-docker compose down -v --remove-orphans
-docker compose up --build
-```
-
-Then check:
-
-```bash
-curl http://localhost:8000/health
-curl "http://localhost:8000/patients?page=1&page_size=5"
-curl http://localhost:8000/patients/stats
-```
-
 ## API Surface
 
 Required endpoints are implemented:
 
 ```text
 GET    /health
+
 GET    /patients
-GET    /patients/stats
 GET    /patients/{id}
 POST   /patients
 PUT    /patients/{id}
@@ -142,6 +84,7 @@ GET    /patients/{id}/notes
 DELETE /patients/{id}/notes/{note_id}
 
 GET    /patients/{id}/summary
+GET    /patients/stats
 ```
 
 `GET /patients` supports backend-owned:
@@ -170,30 +113,38 @@ flowchart LR
   API --> DB[(PostgreSQL in Docker)]
   API --> Summary[Deterministic Summary Logic]
   API --> Notes[Patient Notes Workflow]
+  API --> Stats[Patient Stats Endpoint]
 ```
 
 ## Frontend Decisions
 
 * Vite + React TypeScript keeps the frontend fast and simple.
-* React Router handles route-level navigation.
+* React Router handles navigation.
 * TanStack Query handles server state: loading, errors, caching, refetching, and mutations.
-* Local React state is used only for UI concerns like form inputs and filters.
+* Local React state is used for UI state such as filters and form values.
 * Redux was intentionally avoided because the application state is primarily server state.
 
 ## Backend Decisions
 
 * FastAPI provides typed request/response handling and automatic API docs.
 * SQLAlchemy models define the database layer.
-* Pydantic schemas validate incoming and outgoing API data.
+* Pydantic schemas validate API payloads.
 * The backend owns pagination, filtering, sorting, and validation.
-* Request logging uses standard Python logging and records only method, path, status code, and duration. Request bodies and patient data are intentionally not logged.
-* Local development can use SQLite, while Docker uses PostgreSQL.
+* Request logging is metadata-only: method, path, status code, and duration. Patient bodies, notes, and clinical details are not logged.
 
 ## Patient Summary Design
 
 The generated patient summary is deterministic rather than LLM-backed.
 
-This was intentional because the take-home should run locally without external credentials, network dependencies, latency, nondeterminism, or hallucination risk. The summary is derived from structured patient fields and recent notes.
+This keeps the project locally runnable without external credentials, network dependencies, latency, nondeterminism, or hallucination risk. The summary is derived from structured patient fields and recent notes.
+
+## Data
+
+All seeded data is synthetic.
+
+The app seeds 120 patients so pagination, search, filtering, sorting, and the status dashboard can be exercised against more than a tiny sample dataset.
+
+No real patient data should be used with this project.
 
 ## Validation and Error Handling
 
@@ -204,43 +155,38 @@ Examples:
 * future date of birth is rejected
 * required fields are enforced
 * invalid email is rejected
+* invalid status and blood type values are rejected
 * patient not found returns `404`
 * invalid payloads return validation errors
 * patient list sorting is constrained to known safe fields
+* network and validation errors are surfaced in the UI
 
-## Data
+## Stretch Goals Implemented
 
-All seeded data is synthetic.
-
-The app seeds 120 patients so pagination, search, filtering, and sorting can be exercised against more than a tiny sample dataset.
-
-No real patient data should be used with this project.
-
-## Security and Data Handling
-
-This take-home uses synthetic data only. Request logs are intentionally metadata-only: method, path, status code, and duration. The app does not log request bodies, response bodies, notes, allergies, conditions, blood type, dates of birth, addresses, or emails.
+* Backend sorting/filtering query parameters
+* Request logging middleware
+* Patient status metrics and visualization
+* API endpoint tests
+* One-command preflight verification
 
 ## Tradeoffs
 
 * Backend-owned pagination/filtering/sorting keeps list behavior scalable and testable.
-* Operational metrics use a lightweight backend stats endpoint instead of deriving global counts from one paginated frontend response.
 * Deterministic summaries avoid API keys, latency, nondeterminism, and fake LLM plumbing.
-* TanStack Query is used for server state instead of heavier client state management.
 * No auth, roles, queues, websockets, or external APIs were added because they are outside the take-home scope.
+* Startup table creation is used instead of Alembic migrations to keep the project easy to run in a time-boxed take-home. In production, I would use explicit migrations.
 * The app prioritizes correctness, maintainability, and easy local setup over visual complexity.
 
 ## Future Improvements
 
 Given more time, I would add:
 
-* role-based authentication
+* authentication and role-based access control
 * audit trail for patient edits and note changes
-* richer dashboard analytics
-* E2E tests for core user flows
-* Alembic migrations instead of startup table creation
-* optimistic locking for concurrent patient edits
+* Alembic migrations
 * CI workflow for backend tests and frontend build
-* more advanced accessibility review
+* E2E tests for core user journeys
+* deeper accessibility review
 * production deployment configuration
 
 ## Architecture Timeline

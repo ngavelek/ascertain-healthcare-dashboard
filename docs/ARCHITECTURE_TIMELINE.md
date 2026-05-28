@@ -108,6 +108,415 @@ erDiagram
 
 ---
 
+### 3. Patient CRUD API
+
+**Commit:** `feat(api): implement patient CRUD endpoints`
+
+**What changed**
+
+* Added Pydantic schemas for patient create, update, read, and paginated list responses.
+* Added `/patients` CRUD routes backed by SQLAlchemy sessions.
+* Added backend-owned pagination, search, status filtering, and sorting.
+* Added API tests for list behavior, validation errors, not-found responses, and create/read/update/delete.
+
+**Why it mattered**
+
+* Established the main API contract the React app will consume.
+* Kept scalable list behavior on the backend instead of forcing the browser to load every patient.
+* Made server validation and error responses explicit before frontend forms depend on them.
+
+**Requirement coverage**
+
+* `GET /patients`
+* `GET /patients/{id}`
+* `POST /patients`
+* `PUT /patients/{id}`
+* `DELETE /patients/{id}`
+* Appropriate status codes for create, delete, validation, and missing records.
+* Backend tests for important patient API behavior.
+
+**Verification**
+
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+
+**Current architecture impact**
+
+The backend now exposes a reviewer-facing patient API over the seeded database. The frontend can depend on paginated `items`, `total`, `page`, `page_size`, and `pages` metadata instead of inventing client-only list behavior.
+
+```mermaid
+sequenceDiagram
+  participant Web as Future React Frontend
+  participant API as FastAPI Patients Router
+  participant DB as SQLAlchemy Database Session
+
+  Web->>API: GET /patients?page=1&search=Ava&sort_by=name
+  API->>DB: Filter, count, order, limit
+  DB-->>API: Patients page + total count
+  API-->>Web: PatientListResponse
+```
+
+---
+
+### 4. React routing and API client foundation
+
+**Commit:** `feat(web): initialize React app with routing and API client`
+
+**What changed**
+
+* Added a Vite React TypeScript frontend in `frontend/`.
+* Added route placeholders for `/`, `/patients`, `/patients/:id`, `/patients/new`, `/patients/:id/edit`, and `*`.
+* Added a typed API client for patient list, read, create, update, and delete calls.
+* Added TanStack Query provider setup for server-state flows that will be built in later milestones.
+* Added frontend lint and build scripts with a committed package lock.
+
+**Why it mattered**
+
+* Established the browser application entrypoint without coupling UI work to backend implementation details.
+* Created a typed boundary for FastAPI responses before building list/detail/form screens.
+* Verified the frontend can compile independently from the backend.
+
+**Requirement coverage**
+
+* React TypeScript frontend initialized.
+* Required route surface created.
+* Frontend API client can reach the required patient CRUD endpoints.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The repository is now a real full-stack monorepo: FastAPI owns patient data behavior, while React owns navigation and server-state consumption through a typed client layer.
+
+```mermaid
+flowchart LR
+  Routes[React Router Routes] --> Pages[Route Page Components]
+  Pages --> Query[TanStack Query Provider]
+  Query --> Client[Typed API Client]
+  Client --> API[FastAPI /patients API]
+```
+
+---
+
+### 5. Responsive layout and patient directory
+
+**Commit:** `feat(web): add responsive layout and patient list`
+
+**What changed**
+
+* Added the responsive header, sidebar, and main content shell.
+* Replaced the patients placeholder with a backend-driven directory.
+* Added URL-backed search, status filtering, sorting, page size, and pagination.
+* Added non-blocking search input with deferred URL updates.
+* Added loading, empty, error, and incremental fetching states for the directory.
+
+**Why it mattered**
+
+* Delivered the primary reviewer-visible workflow: finding and opening patient records.
+* Kept search/filter/sort/pagination on the API boundary rather than duplicating it in browser state.
+* Made the layout usable on desktop and lower-resolution screens before adding detail and form flows.
+
+**Requirement coverage**
+
+* Responsive layout with header, sidebar, and main area.
+* Patient list showing name, age, last visit, and status.
+* Search/filter functionality.
+* Sorting.
+* Pagination.
+* Non-blocking search.
+* Meaningful loading, empty, and error states.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend now consumes the patient list endpoint as designed: URL params become typed API params, TanStack Query fetches the current page, and the UI renders list state without owning database-scale behavior.
+
+```mermaid
+flowchart TD
+  Controls[Search Filter Sort Pagination Controls] --> URL[URL Query Params]
+  URL --> QueryKey[TanStack Query Key]
+  QueryKey --> Client[API Client listPatients]
+  Client --> PatientsAPI[GET /patients]
+  PatientsAPI --> Directory[Responsive Patient Table]
+```
+
+---
+
+### 6. Patient detail view
+
+**Commit:** `feat(web): add patient detail page`
+
+**What changed**
+
+* Added a data-backed `/patients/:id` page.
+* Rendered patient demographics, contact details, status, last visit, conditions, and allergies.
+* Added detail-specific loading, error, and not-found states.
+* Added navigation back to the directory and forward to edit.
+
+**Why it mattered**
+
+* Completed the read side of the patient workflow after directory selection.
+* Made the record view useful enough for notes and generated summaries to attach in the next milestone.
+* Preserved a simple API boundary by reusing `GET /patients/{id}` through the typed client.
+
+**Requirement coverage**
+
+* Patient detail page.
+* Meaningful loading, error, and not-found states.
+* Responsive detail layout.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend has a complete list-to-detail read path. Patient detail state is fetched independently by ID, which keeps the URL route refreshable and avoids relying on the previous directory page cache.
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Directory as Patient Directory
+  participant Detail as Patient Detail Route
+  participant API as FastAPI
+
+  User->>Directory: Select patient
+  Directory->>Detail: /patients/:id
+  Detail->>API: GET /patients/{id}
+  API-->>Detail: Patient record
+  Detail-->>User: Demographics, contact, clinical profile
+```
+
+---
+
+### 7. Patient notes and deterministic summaries
+
+**Commit:** `feat(api,web): add patient notes and generated summaries`
+
+**What changed**
+
+* Added a `patient_notes` table related to patients.
+* Added note create, list, and delete endpoints.
+* Added `GET /patients/{id}/summary` with deterministic patient-and-note summary logic.
+* Added backend tests for notes, validation, deletion cleanup, and summary output.
+* Added summary and notes panels to the patient detail page.
+
+**Why it mattered**
+
+* Completed the clinical context workflow around a patient record without adding external services.
+* Kept summaries explainable and locally runnable by deriving them from stored patient fields and notes.
+* Gave reviewers an end-to-end example of child-resource API design and UI mutation handling.
+
+**Requirement coverage**
+
+* `POST /patients/{id}/notes`
+* `GET /patients/{id}/notes`
+* `DELETE /patients/{id}/notes/{note_id}`
+* `GET /patients/{id}/summary`
+* Notes UI.
+* Generated summary UI.
+* Server-side validation and useful not-found messages for notes.
+
+**Verification**
+
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The patient record now has a child-resource workflow. Notes are persisted in the database, summaries are derived at request time, and the frontend invalidates notes and summary queries together after note mutations.
+
+```mermaid
+erDiagram
+  PATIENT ||--o{ PATIENT_NOTE : has
+  PATIENT {
+    string id
+    string status
+    json conditions
+    json allergies
+    date last_visit_at
+  }
+  PATIENT_NOTE {
+    string id
+    string patient_id
+    text content
+    datetime created_at
+  }
+```
+
+---
+
+### 8. Patient create and edit forms
+
+**Commit:** `feat(web): add patient create and edit forms`
+
+**What changed**
+
+* Replaced the form placeholder with create and edit workflows.
+* Added client-side validation for required names, dates, email format, state codes, blood type, and future dates.
+* Wired create and update mutations to the existing patient CRUD API.
+* Added user-facing server/network error display and route-aware loading/error states for edit mode.
+* Invalidated patient list and detail queries after saves.
+
+**Why it mattered**
+
+* Completed the full patient CRUD workflow from the browser.
+* Kept validation layered: fast client checks first, backend validation still authoritative.
+* Preserved the simple API contract by posting the same payload shape the backend already validates.
+
+**Requirement coverage**
+
+* `/patients/new`
+* `/patients/:id/edit`
+* Create/edit patient forms.
+* Client-side and server-side validation.
+* Network and validation error handling.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend now supports all patient CRUD operations. Form state is local to the route, server state remains in TanStack Query, and successful mutations refresh the cached list/detail data before returning to the patient record.
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Form as Create/Edit Form
+  participant Client as API Client
+  participant API as FastAPI
+  participant Cache as TanStack Query Cache
+
+  User->>Form: Submit patient fields
+  Form->>Form: Client validation
+  Form->>Client: POST or PUT /patients
+  Client->>API: Persist patient
+  API-->>Client: Patient
+  Client-->>Cache: Invalidate list/detail queries
+  Form-->>User: Navigate to patient record
+```
+
+---
+
+### 9. Docker Compose local setup
+
+**Commit:** `chore(docker): add Docker Compose local setup`
+
+**What changed**
+
+* Added root `docker-compose.yml` with PostgreSQL, backend, and frontend services.
+* Added backend and frontend Dockerfiles.
+* Added Docker ignore files so virtualenvs, node modules, build output, caches, and local databases stay out of images.
+* Added seed configuration values to `.env.example`.
+
+**Why it mattered**
+
+* Created the expected one-command local review path.
+* Moved the app from separate local processes toward a reproducible full-stack setup.
+* Kept PostgreSQL as the Docker-backed database while preserving SQLite for lightweight non-Docker backend tests.
+
+**Requirement coverage**
+
+* Working Compose definition for frontend, backend, and PostgreSQL.
+* Backend Dockerfile.
+* Frontend Dockerfile.
+* PostgreSQL service.
+* `.env.example` includes required runtime variables.
+
+**Verification**
+
+* `docker compose config` passed.
+* `docker compose up --build` was attempted but Docker daemon was unavailable in this environment: `Cannot connect to the Docker daemon at unix:///Users/ngavelek/.docker/run/docker.sock. Is the docker daemon running?`
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The intended local runtime is now containerized as three services. Full runtime verification needs Docker Desktop or another Docker daemon running locally, then `docker compose up --build`.
+
+```mermaid
+flowchart LR
+  Browser[Browser] --> Frontend[frontend: Vite on 5173]
+  Frontend --> Backend[backend: FastAPI on 8000]
+  Backend --> DB[(db: PostgreSQL on 5432)]
+```
+
+---
+
+### 10. Reviewer README and tradeoffs
+
+**Commit:** `docs: add README reviewer path and tradeoffs`
+
+**What changed**
+
+* Rewrote the README around the reviewer path.
+* Documented Docker startup, local development, verification commands, implemented API endpoints, and architecture tradeoffs.
+* Pointed reviewers to the architecture timeline for the implementation narrative.
+
+**Why it mattered**
+
+* Made the project easier to run and evaluate quickly.
+* Captured the deliberate scope decisions: backend-owned list behavior, deterministic summaries, TanStack Query, and no out-of-scope infrastructure.
+* Reduced interview risk by giving a concise explanation path.
+
+**Requirement coverage**
+
+* Succinct README with local setup instructions.
+* Docker Compose reviewer command.
+* Backend/frontend verification commands.
+* Architecture and tradeoff documentation.
+
+**Verification**
+
+* `docker compose config`
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The implementation is now documented as a runnable, reviewable full-stack submission rather than a collection of source files.
+
+```mermaid
+flowchart TD
+  Reviewer[Reviewer] --> README[README Quick Start]
+  README --> Compose[docker compose up --build]
+  README --> API[API Surface]
+  README --> Timeline[Architecture Timeline]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

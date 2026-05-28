@@ -469,6 +469,54 @@ flowchart LR
 
 ---
 
+### 10. Reviewer README and tradeoffs
+
+**Commit:** `docs: add README reviewer path and tradeoffs`
+
+**What changed**
+
+* Rewrote the README around the reviewer path.
+* Documented Docker startup, local development, verification commands, implemented API endpoints, and architecture tradeoffs.
+* Pointed reviewers to the architecture timeline for the implementation narrative.
+
+**Why it mattered**
+
+* Made the project easier to run and evaluate quickly.
+* Captured the deliberate scope decisions: backend-owned list behavior, deterministic summaries, TanStack Query, and no out-of-scope infrastructure.
+* Reduced interview risk by giving a concise explanation path.
+
+**Requirement coverage**
+
+* Succinct README with local setup instructions.
+* Docker Compose reviewer command.
+* Backend/frontend verification commands.
+* Architecture and tradeoff documentation.
+
+**Verification**
+
+* `docker compose config`
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The implementation is now documented as a runnable, reviewable full-stack submission rather than a collection of source files.
+
+```mermaid
+flowchart TD
+  Reviewer[Reviewer] --> README[README Quick Start]
+  README --> Compose[docker compose up --build]
+  README --> API[API Surface]
+  README --> Timeline[Architecture Timeline]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

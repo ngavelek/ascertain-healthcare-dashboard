@@ -166,6 +166,15 @@ class PatientListResponse(BaseModel):
     pages: int
 
 
+class PatientStats(BaseModel):
+    total: int
+    active: int
+    needs_review: int
+    inactive: int
+    recent_visits: int
+    recent_visit_days: int
+
+
 class PatientNoteCreate(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
 

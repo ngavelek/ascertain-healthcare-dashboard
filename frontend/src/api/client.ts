@@ -5,6 +5,7 @@ import type {
   PatientNote,
   PatientNotePayload,
   PatientPayload,
+  PatientStats,
   PatientSummary,
 } from "./types";
 
@@ -79,6 +80,10 @@ function toSearchParams(params: PatientListParams): string {
 
 export function listPatients(params: PatientListParams = {}) {
   return request<PatientListResponse>(`/patients${toSearchParams(params)}`);
+}
+
+export function getPatientStats() {
+  return request<PatientStats>("/patients/stats");
 }
 
 export function getPatient(id: string) {

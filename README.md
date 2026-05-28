@@ -2,7 +2,7 @@
 
 A full-stack patient management dashboard for a medical practice, built with React TypeScript, FastAPI, and PostgreSQL.
 
-The app supports patient CRUD, backend-owned search/filter/sort/pagination, patient notes, generated patient summaries, responsive routing, and Docker-based local setup.
+The app supports patient CRUD, backend-owned search/filter/sort/pagination, operational patient metrics, patient notes, generated patient summaries, responsive routing, metadata-only request logging, and Docker-based local setup.
 
 ## Quick Start
 
@@ -27,13 +27,14 @@ The backend creates tables on startup and seeds 120 synthetic patients when the 
 
 1. Start the app with `docker compose up --build`.
 2. Open the patient directory at `http://localhost:5173/patients`.
-3. Search, filter by status, sort, and paginate.
-4. Open a patient detail page.
-5. Add a patient note.
-6. View the generated patient summary.
-7. Create a new patient.
-8. Edit the patient, including status, allergies, conditions, date of birth, and last visit date.
-9. Confirm API docs at `http://localhost:8000/docs`.
+3. Review operational metrics and the patient status breakdown.
+4. Search, filter by status, sort, and paginate.
+5. Open a patient detail page.
+6. Add a patient note.
+7. View the generated patient summary.
+8. Create a new patient.
+9. Edit the patient, including status, allergies, conditions, date of birth, and last visit date.
+10. Confirm API docs at `http://localhost:8000/docs`.
 
 ## Local Development
 
@@ -114,6 +115,7 @@ Then check:
 ```bash
 curl http://localhost:8000/health
 curl "http://localhost:8000/patients?page=1&page_size=5"
+curl http://localhost:8000/patients/stats
 ```
 
 ## API Surface
@@ -123,6 +125,7 @@ Required endpoints are implemented:
 ```text
 GET    /health
 GET    /patients
+GET    /patients/stats
 GET    /patients/{id}
 POST   /patients
 PUT    /patients/{id}
@@ -177,6 +180,7 @@ flowchart LR
 * SQLAlchemy models define the database layer.
 * Pydantic schemas validate incoming and outgoing API data.
 * The backend owns pagination, filtering, sorting, and validation.
+* Request logging uses standard Python logging and records only method, path, status code, and duration. Request bodies and patient data are intentionally not logged.
 * Local development can use SQLite, while Docker uses PostgreSQL.
 
 ## Patient Summary Design
@@ -209,6 +213,7 @@ No real patient data should be used with this project.
 ## Tradeoffs
 
 * Backend-owned pagination/filtering/sorting keeps list behavior scalable and testable.
+* Operational metrics use a lightweight backend stats endpoint instead of deriving global counts from one paginated frontend response.
 * Deterministic summaries avoid API keys, latency, nondeterminism, and fake LLM plumbing.
 * TanStack Query is used for server state instead of heavier client state management.
 * No auth, roles, queues, websockets, or external APIs were added because they are outside the take-home scope.

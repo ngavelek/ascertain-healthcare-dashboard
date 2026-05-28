@@ -583,6 +583,50 @@ No backend or data model change. This is a routing/navigation polish pass that m
 
 ---
 
+### 13. Operational metrics and request logging
+
+**Commit:** `feat: add operational metrics and request logging`
+
+**What changed**
+
+* Added a lightweight backend `GET /patients/stats` endpoint for total patients, status counts, and recent visits.
+* Added compact metrics cards and a CSS-based status visualization above the patient list.
+* Added FastAPI request logging middleware using standard Python logging.
+* Request logs include only HTTP method, path, status code, and duration in milliseconds.
+
+**Why it mattered**
+
+* `/patients` now behaves more like the primary operational dashboard.
+* Status metrics come from backend data instead of a single paginated list response.
+* Metadata-only request logs improve observability without logging request bodies or patient data.
+
+**Requirement coverage**
+
+* Data visualization / operational metrics.
+* Patient status visualization without adding a charting dependency.
+* Basic backend observability middleware.
+* Existing search/filter/sort/pagination remains owned by the current list endpoint.
+
+**Verification**
+
+* `cd backend && source .venv/bin/activate && python -m pytest -q && python -m compileall -q app tests && cd ..`
+* `cd frontend && npm run build && npm run lint && cd ..`
+* `docker compose config`
+
+**Current architecture impact**
+
+The frontend now consumes a second read-only backend endpoint for dashboard-level metrics while keeping the paginated list endpoint focused on directory rows.
+
+```mermaid
+flowchart LR
+  PatientsPage[/patients page] --> Stats[GET /patients/stats]
+  PatientsPage --> List[GET /patients?page=&status=&sort_by=]
+  Stats --> Metrics[Cards and CSS status bar]
+  List --> Table[Patient directory table]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

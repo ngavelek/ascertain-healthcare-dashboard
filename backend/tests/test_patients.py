@@ -48,6 +48,21 @@ def test_list_patients_supports_pagination_search_filter_and_sort() -> None:
     assert "age" in body["items"][0]
 
 
+def test_patient_stats_counts_statuses_and_recent_visits() -> None:
+    reset_database(seed_count=20)
+
+    response = client.get("/patients/stats")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 20
+    assert body["active"] == 12
+    assert body["needs_review"] == 4
+    assert body["inactive"] == 4
+    assert body["recent_visits"] == 5
+    assert body["recent_visit_days"] == 30
+
+
 def test_create_read_update_and_delete_patient() -> None:
     reset_database(seed_count=5)
 

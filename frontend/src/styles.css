@@ -180,6 +180,109 @@ button {
   border: 1px solid #c9d4dc;
 }
 
+.metrics-dashboard {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.metric-card,
+.status-visualization {
+  background: #ffffff;
+  border: 1px solid #d6dde3;
+  border-radius: 8px;
+}
+
+.metric-card {
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 16px;
+}
+
+.metric-card span,
+.status-visualization__header span {
+  color: #64717d;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.metric-card strong {
+  color: #17212b;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.metric-card small {
+  color: #64717d;
+  font-weight: 750;
+}
+
+.status-visualization {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 12px;
+  padding: 16px;
+}
+
+.status-visualization__header,
+.status-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-visualization__header strong {
+  color: #52606d;
+  font-size: 0.9rem;
+}
+
+.status-bar {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0f2;
+}
+
+.status-bar__segment--active,
+.status-dot--active {
+  background: #2f9d5c;
+}
+
+.status-bar__segment--needs_review,
+.status-dot--needs_review {
+  background: #c48a00;
+}
+
+.status-bar__segment--inactive,
+.status-dot--inactive {
+  background: #77838e;
+}
+
+.status-legend {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  color: #52606d;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.status-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
 .directory-tools {
   display: grid;
   grid-template-columns: minmax(260px, 1.6fr) repeat(4, minmax(132px, 1fr));
@@ -704,6 +807,10 @@ tbody tr:last-child td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .metrics-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .search-field {
     grid-column: 1 / -1;
   }
@@ -738,6 +845,10 @@ tbody tr:last-child td {
   }
 
   .directory-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-dashboard {
     grid-template-columns: 1fr;
   }
 

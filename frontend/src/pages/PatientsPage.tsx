@@ -9,10 +9,10 @@ import {
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { listPatients } from "../api/client";
-import type { PatientListParams, PatientStatus } from "../api/types";
+import { getPatientStats, listPatients } from "../api/client";
+import type { PatientListParams, PatientStats, PatientStatus } from "../api/types";
 import { StatusBadge } from "../components/StatusBadge";
-import { formatDate, fullName, patientLocation } from "../utils/format";
+import { formatDate, formatStatus, fullName, patientLocation } from "../utils/format";
 
 const PATIENT_STATUSES: PatientStatus[] = ["active", "needs_review", "inactive"];
 const SORT_BY_VALUES = [
@@ -52,6 +52,77 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
   return "Unable to load patients.";
+}
+
+function metricValue(value: number | undefined) {
+  return value === undefined ? "..." : value.toLocaleString();
+}
+
+function statusPercent(value: number, total: number) {
+  if (!total) {
+    return "0%";
+  }
+
+  return `${(value / total) * 100}%`;
+}
+
+function MetricsDashboard({ stats }: { stats?: PatientStats }) {
+  const total = stats?.total ?? 0;
+  const statusBreakdown: Array<{ status: PatientStatus; value: number }> = [
+    { status: "active", value: stats?.active ?? 0 },
+    { status: "needs_review", value: stats?.needs_review ?? 0 },
+    { status: "inactive", value: stats?.inactive ?? 0 },
+  ];
+
+  return (
+    <div className="metrics-dashboard" aria-label="Patient operational metrics">
+      <div className="metric-card">
+        <span>Total patients</span>
+        <strong>{metricValue(stats?.total)}</strong>
+      </div>
+      <div className="metric-card">
+        <span>Active</span>
+        <strong>{metricValue(stats?.active)}</strong>
+      </div>
+      <div className="metric-card">
+        <span>Needs Review</span>
+        <strong>{metricValue(stats?.needs_review)}</strong>
+      </div>
+      <div className="metric-card">
+        <span>Inactive</span>
+        <strong>{metricValue(stats?.inactive)}</strong>
+      </div>
+      <div className="metric-card">
+        <span>Recent visits</span>
+        <strong>{metricValue(stats?.recent_visits)}</strong>
+        <small>Last {stats?.recent_visit_days ?? 30} days</small>
+      </div>
+
+      <div className="status-visualization">
+        <div className="status-visualization__header">
+          <span>Status breakdown</span>
+          <strong>{metricValue(stats?.total)} total</strong>
+        </div>
+        <div className="status-bar" aria-hidden="true">
+          {statusBreakdown.map(({ status, value }) => (
+            <span
+              key={status}
+              className={`status-bar__segment status-bar__segment--${status}`}
+              style={{ width: statusPercent(value, total) }}
+            />
+          ))}
+        </div>
+        <div className="status-legend">
+          {statusBreakdown.map(({ status, value }) => (
+            <span key={status}>
+              <i className={`status-dot status-dot--${status}`} aria-hidden="true" />
+              {formatStatus(status)}: {value.toLocaleString()}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function PatientsPage() {
@@ -113,6 +184,10 @@ export function PatientsPage() {
     queryFn: () => listPatients(patientParams),
     placeholderData: (previousData) => previousData,
   });
+  const statsQuery = useQuery({
+    queryKey: ["patient-stats"],
+    queryFn: getPatientStats,
+  });
 
   function updateParams(updates: Record<string, string | number | undefined>) {
     const nextParams = new URLSearchParams(searchParams);
@@ -139,7 +214,7 @@ export function PatientsPage() {
       <div className="page-toolbar">
         <div className="page-heading">
           <p className="eyebrow">Patients</p>
-          <h1>Patient directory</h1>
+          <h1>Operational dashboard</h1>
           <p>{data ? `${data.total} records` : "Loading records"}</p>
         </div>
         <Link className="button button--primary" to="/patients/new">
@@ -147,6 +222,14 @@ export function PatientsPage() {
           <span>New patient</span>
         </Link>
       </div>
+
+      <MetricsDashboard stats={statsQuery.data} />
+
+      {statsQuery.isError ? (
+        <div className="state-panel state-panel--error">
+          {getErrorMessage(statsQuery.error)}
+        </div>
+      ) : null}
 
       <div className="directory-tools" aria-label="Patient directory controls">
         <label className="search-field">

@@ -29,6 +29,15 @@ export type PatientListResponse = {
   pages: number;
 };
 
+export type PatientStats = {
+  total: number;
+  active: number;
+  needs_review: number;
+  inactive: number;
+  recent_visits: number;
+  recent_visit_days: number;
+};
+
 export type PatientListParams = {
   page?: number;
   page_size?: number;

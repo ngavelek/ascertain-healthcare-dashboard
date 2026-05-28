@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from math import ceil
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -13,6 +13,7 @@ from app.schemas import (
     PatientNoteCreate,
     PatientNoteRead,
     PatientRead,
+    PatientStats,
     PatientSummary,
     PatientUpdate,
 )
@@ -163,6 +164,31 @@ def list_patients(
         page=page,
         page_size=page_size,
         pages=ceil(total / page_size) if total else 0,
+    )
+
+
+@router.get("/stats", response_model=PatientStats)
+def get_patient_stats(db: Session = Depends(get_db)) -> PatientStats:
+    recent_visit_days = 30
+    recent_visit_cutoff = date.today() - timedelta(days=recent_visit_days)
+    status_counts = dict(
+        db.execute(
+            select(Patient.status, func.count(Patient.id)).group_by(Patient.status)
+        ).all()
+    )
+
+    return PatientStats(
+        total=sum(status_counts.values()),
+        active=status_counts.get("active", 0),
+        needs_review=status_counts.get("needs_review", 0),
+        inactive=status_counts.get("inactive", 0),
+        recent_visits=db.scalar(
+            select(func.count(Patient.id)).where(
+                Patient.last_visit_at >= recent_visit_cutoff
+            )
+        )
+        or 0,
+        recent_visit_days=recent_visit_days,
     )
 
 

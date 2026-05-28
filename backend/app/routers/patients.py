@@ -129,13 +129,13 @@ def list_patients(
 ) -> PatientListResponse:
     if status_filter not in {None, "active", "needs_review", "inactive"}:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="status must be one of active, needs_review, or inactive.",
         )
 
     if sort_by not in SORT_COLUMNS:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"sort_by must be one of {', '.join(SORT_COLUMNS)}.",
         )
 

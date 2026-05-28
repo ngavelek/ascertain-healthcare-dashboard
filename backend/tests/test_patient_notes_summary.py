@@ -67,6 +67,36 @@ def test_note_validation_and_missing_patient_errors() -> None:
     assert "not found" in missing_response.json()["detail"]
 
 
+def test_delete_note_for_wrong_patient_does_not_delete_note() -> None:
+    patient_id = reset_database(seed_count=2)
+
+    db = SessionLocal()
+    try:
+        patients = db.scalars(select(Patient)).all()
+        assert len(patients) >= 2
+        other_patient_id = next(
+            patient.id for patient in patients if patient.id != patient_id
+        )
+    finally:
+        db.close()
+
+    create_response = client.post(
+        f"/patients/{patient_id}/notes",
+        json={"content": "Care coordinator reviewed follow-up plan."},
+    )
+    assert create_response.status_code == 201
+    note_id = create_response.json()["id"]
+
+    wrong_patient_delete_response = client.delete(
+        f"/patients/{other_patient_id}/notes/{note_id}"
+    )
+    assert wrong_patient_delete_response.status_code == 404
+
+    notes_response = client.get(f"/patients/{patient_id}/notes")
+    assert notes_response.status_code == 200
+    assert any(note["id"] == note_id for note in notes_response.json())
+
+
 def test_patient_summary_is_deterministic_and_uses_notes() -> None:
     patient_id = reset_database()
     client.post(
@@ -81,6 +111,18 @@ def test_patient_summary_is_deterministic_and_uses_notes() -> None:
     assert body["patient_id"] == patient_id
     assert "Patient reports better sleep" in body["summary"]
     assert any("note" in highlight for highlight in body["highlights"])
+
+
+def test_patient_summary_handles_patients_without_notes() -> None:
+    patient_id = reset_database()
+
+    response = client.get(f"/patients/{patient_id}/summary")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["patient_id"] == patient_id
+    assert "No clinical notes have been recorded." in body["summary"]
+    assert any("0 notes recorded." == highlight for highlight in body["highlights"])
 
 
 def test_deleting_patient_removes_notes() -> None:

@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime
 from typing import Literal
 
@@ -6,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 PatientStatus = Literal["active", "needs_review", "inactive"]
 
 BLOOD_TYPES = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
+EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 def strip_required_text(value: str) -> str:
@@ -13,6 +15,12 @@ def strip_required_text(value: str) -> str:
     if not cleaned:
         raise ValueError("must not be blank")
     return cleaned
+
+
+def strip_required_update_text(value: str | None) -> str:
+    if value is None:
+        raise ValueError("must not be null")
+    return strip_required_text(value)
 
 
 def strip_optional_text(value: str | None) -> str | None:
@@ -32,16 +40,28 @@ def validate_blood_type(value: str | None) -> str | None:
     return value
 
 
+def validate_email(value: str | None) -> str | None:
+    if value is not None and not EMAIL_PATTERN.match(value):
+        raise ValueError("must be a valid email address")
+    return value
+
+
 def validate_date_of_birth(value: date) -> date:
     if value > date.today():
         raise ValueError("date_of_birth cannot be in the future")
     return value
 
 
-def validate_optional_date_of_birth(value: date | None) -> date | None:
-    if value is not None:
-        return validate_date_of_birth(value)
-    return None
+def validate_update_date_of_birth(value: date | None) -> date:
+    if value is None:
+        raise ValueError("must not be null")
+    return validate_date_of_birth(value)
+
+
+def validate_update_status(value: PatientStatus | None) -> PatientStatus:
+    if value is None:
+        raise ValueError("must not be null")
+    return value
 
 
 def validate_last_visit(value: date | None) -> date | None:
@@ -53,7 +73,19 @@ def validate_last_visit(value: date | None) -> date | None:
 def normalize_string_list(value: list[str] | None) -> list[str]:
     if value is None:
         return []
-    return [str(item).strip() for item in value if str(item).strip()]
+
+    if not isinstance(value, list):
+        raise ValueError("must be a list")
+
+    cleaned: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise ValueError("items must be text")
+        stripped = item.strip()
+        if stripped:
+            cleaned.append(stripped)
+
+    return cleaned
 
 
 def strip_note_content(value: str) -> str:
@@ -94,6 +126,7 @@ class PatientBase(BaseModel):
     )(strip_optional_text)
     _normalize_state = field_validator("state")(normalize_state)
     _validate_blood_type = field_validator("blood_type")(validate_blood_type)
+    _validate_email = field_validator("email")(validate_email)
     _validate_date_of_birth = field_validator("date_of_birth")(
         validate_date_of_birth
     )
@@ -124,7 +157,7 @@ class PatientUpdate(BaseModel):
     last_visit_at: date | None = None
 
     _strip_required_text = field_validator("first_name", "last_name")(
-        strip_required_text
+        strip_required_update_text
     )
     _strip_optional_text = field_validator(
         "phone",
@@ -138,9 +171,11 @@ class PatientUpdate(BaseModel):
     )(strip_optional_text)
     _normalize_state = field_validator("state")(normalize_state)
     _validate_blood_type = field_validator("blood_type")(validate_blood_type)
+    _validate_email = field_validator("email")(validate_email)
     _validate_date_of_birth = field_validator("date_of_birth")(
-        validate_optional_date_of_birth
+        validate_update_date_of_birth
     )
+    _validate_status = field_validator("status")(validate_update_status)
     _validate_last_visit = field_validator("last_visit_at")(validate_last_visit)
     _normalize_string_list = field_validator(
         "conditions",

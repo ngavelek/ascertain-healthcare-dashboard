@@ -82,6 +82,12 @@ Then run:
 make verify
 ```
 
+For the final submission path, run the full Docker-backed preflight:
+
+```bash
+make preflight
+```
+
 Equivalent manual commands:
 
 ```bash
@@ -152,7 +158,7 @@ sort_dir
 Example:
 
 ```bash
-curl "http://localhost:8000/patients?page=1&page_size=10&search=smith&status=active&sort_by=last_name&sort_dir=asc"
+curl "http://localhost:8000/patients?page=1&page_size=10&search=smith&status=active&sort_by=name&sort_dir=asc"
 ```
 
 ## Architecture
@@ -210,6 +216,10 @@ The app seeds 120 patients so pagination, search, filtering, and sorting can be 
 
 No real patient data should be used with this project.
 
+## Security and Data Handling
+
+This take-home uses synthetic data only. Request logs are intentionally metadata-only: method, path, status code, and duration. The app does not log request bodies, response bodies, notes, allergies, conditions, blood type, dates of birth, addresses, or emails.
+
 ## Tradeoffs
 
 * Backend-owned pagination/filtering/sorting keeps list behavior scalable and testable.
@@ -228,6 +238,7 @@ Given more time, I would add:
 * richer dashboard analytics
 * E2E tests for core user flows
 * Alembic migrations instead of startup table creation
+* optimistic locking for concurrent patient edits
 * CI workflow for backend tests and frontend build
 * more advanced accessibility review
 * production deployment configuration

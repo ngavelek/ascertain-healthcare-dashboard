@@ -627,6 +627,44 @@ flowchart LR
 
 ---
 
+### 14. Final hardening review
+
+**Commit:** `polish: harden take-home before submission`
+
+**What changed**
+
+* Ran an adversarial security, backend, frontend, Docker, and documentation review.
+* Tightened backend validation for server-side email format, required update fields, and medical list payload types.
+* Added regression tests for invalid list parameters, invalid patient payloads, wrong-patient note deletion, and summaries without notes.
+* Improved frontend mutation invalidation so patient stats and generated summaries refresh after patient saves.
+* Added a preflight guard against tracked local/generated/secret-bearing files.
+
+**Why it mattered**
+
+* Reduced 500-risk validation paths before submission.
+* Protected child-resource ownership semantics for patient notes.
+* Kept dashboard metrics and summaries from going stale after create/edit workflows.
+* Made final reviewer verification more explicit without adding out-of-scope infrastructure.
+
+**Requirement coverage**
+
+* Server-side validation and useful errors.
+* Notes endpoint ownership guardrails.
+* Patient create/edit cache correctness.
+* Docker-backed preflight workflow.
+* No request body, note content, or patient data logging.
+
+**Verification**
+
+* `make preflight`
+* `git ls-files | grep -E "node_modules|\.venv|\.env$|dist|dev\.db|\.DS_Store" || true`
+
+**Current architecture impact**
+
+No new architectural component. This is a final guardrail pass over the existing FastAPI, React, TanStack Query, Docker Compose, and Makefile workflow.
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

@@ -130,6 +130,63 @@ def test_patient_validation_returns_useful_errors() -> None:
     assert "date_of_birth cannot be in the future" in error_text
 
 
+def test_list_patients_rejects_invalid_sort_and_status() -> None:
+    reset_database(seed_count=5)
+
+    invalid_sort_response = client.get("/patients", params={"sort_by": "email"})
+    assert invalid_sort_response.status_code == 422
+    assert "sort_by must be one of" in invalid_sort_response.json()["detail"]
+
+    invalid_status_response = client.get(
+        "/patients",
+        params={"status": "archived"},
+    )
+    assert invalid_status_response.status_code == 422
+    assert "status must be one of" in invalid_status_response.json()["detail"]
+
+
+def test_patient_payload_validation_rejects_invalid_email_blood_type_and_lists() -> None:
+    reset_database(seed_count=1)
+
+    response = client.post(
+        "/patients",
+        json={
+            "first_name": "Nora",
+            "last_name": "Williams",
+            "date_of_birth": "1984-03-14",
+            "email": "not-an-email",
+            "blood_type": "Z+",
+            "conditions": "Hypertension",
+        },
+    )
+
+    assert response.status_code == 422
+    error_text = str(response.json()["detail"])
+    assert "must be a valid email address" in error_text
+    assert "must be a valid blood type" in error_text
+    assert "must be a list" in error_text
+
+
+def test_patient_update_rejects_null_required_fields() -> None:
+    reset_database(seed_count=1)
+
+    db = SessionLocal()
+    try:
+        patient = db.scalars(select(Patient)).first()
+        assert patient is not None
+        patient_id = patient.id
+    finally:
+        db.close()
+
+    response = client.put(
+        f"/patients/{patient_id}",
+        json={"first_name": None, "date_of_birth": None, "status": None},
+    )
+
+    assert response.status_code == 422
+    assert "must not be null" in str(response.json()["detail"])
+
+
 def test_get_missing_patient_returns_404() -> None:
     reset_database(seed_count=1)
 

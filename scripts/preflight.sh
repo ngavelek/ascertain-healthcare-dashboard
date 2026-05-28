@@ -6,6 +6,14 @@ echo "== 1. Git status =="
 git status --short
 
 echo ""
+echo "== 1b. Forbidden tracked file check =="
+if git ls-files | grep -E "node_modules|\.venv|\.env$|dist|dev\.db|\.DS_Store"; then
+  echo "Forbidden generated, local, or secret-bearing files are tracked."
+  exit 1
+fi
+echo "No forbidden files are tracked."
+
+echo ""
 echo "== 2. Backend tests =="
 cd backend
 
@@ -126,6 +134,11 @@ assert status == 200, status
 assert "items" in patients, patients
 assert "total" in patients, patients
 assert len(patients["items"]) > 0, patients
+
+status, stats = request("GET", "/patients/stats")
+assert status == 200, status
+for key in ("total", "active", "needs_review", "inactive", "recent_visits"):
+    assert key in stats, stats
 
 status, filtered = request(
     "GET",

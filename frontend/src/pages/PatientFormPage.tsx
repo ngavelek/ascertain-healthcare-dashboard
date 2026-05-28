@@ -218,7 +218,9 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
     onSuccess: async (patient) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["patients"] }),
+        queryClient.invalidateQueries({ queryKey: ["patient-stats"] }),
         queryClient.invalidateQueries({ queryKey: ["patient", patient.id] }),
+        queryClient.invalidateQueries({ queryKey: ["patient-summary", patient.id] }),
       ]);
       navigate(`/patients/${patient.id}`);
     },

@@ -45,13 +45,21 @@ function formatApiError(status: number, detail: unknown): string {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+      ...init,
+    });
+  } catch {
+    throw new Error(
+      "Unable to reach the backend API. Confirm the backend is running and try again.",
+    );
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

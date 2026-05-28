@@ -23,6 +23,7 @@ dist/
 frontend/dist/
 coverage/
 frontend/coverage/
+*.tsbuildinfo
 
 # OS/editor files
 .DS_Store

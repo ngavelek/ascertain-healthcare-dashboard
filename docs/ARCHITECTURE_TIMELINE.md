@@ -160,6 +160,50 @@ sequenceDiagram
 
 ---
 
+### 4. React routing and API client foundation
+
+**Commit:** `feat(web): initialize React app with routing and API client`
+
+**What changed**
+
+* Added a Vite React TypeScript frontend in `frontend/`.
+* Added route placeholders for `/`, `/patients`, `/patients/:id`, `/patients/new`, `/patients/:id/edit`, and `*`.
+* Added a typed API client for patient list, read, create, update, and delete calls.
+* Added TanStack Query provider setup for server-state flows that will be built in later milestones.
+* Added frontend lint and build scripts with a committed package lock.
+
+**Why it mattered**
+
+* Established the browser application entrypoint without coupling UI work to backend implementation details.
+* Created a typed boundary for FastAPI responses before building list/detail/form screens.
+* Verified the frontend can compile independently from the backend.
+
+**Requirement coverage**
+
+* React TypeScript frontend initialized.
+* Required route surface created.
+* Frontend API client can reach the required patient CRUD endpoints.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The repository is now a real full-stack monorepo: FastAPI owns patient data behavior, while React owns navigation and server-state consumption through a typed client layer.
+
+```mermaid
+flowchart LR
+  Routes[React Router Routes] --> Pages[Route Page Components]
+  Pages --> Query[TanStack Query Provider]
+  Query --> Client[Typed API Client]
+  Client --> API[FastAPI /patients API]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

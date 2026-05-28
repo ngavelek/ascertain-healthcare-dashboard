@@ -356,10 +356,6 @@ export function PatientDetailPage() {
           <ArrowLeft size={18} aria-hidden="true" />
           <span>Patients</span>
         </Link>
-        <Link className="button button--primary" to={`/patients/${patient.id}/edit`}>
-          <Pencil size={18} aria-hidden="true" />
-          <span>Edit patient</span>
-        </Link>
       </div>
 
       <div className="patient-hero">
@@ -377,7 +373,13 @@ export function PatientDetailPage() {
             </span>
           </div>
         </div>
-        <StatusBadge status={patient.status} />
+        <div className="patient-hero__actions">
+          <StatusBadge status={patient.status} />
+          <Link className="button button--secondary" to={`/patients/${patient.id}/edit`}>
+            <Pencil size={18} aria-hidden="true" />
+            <span>Edit patient</span>
+          </Link>
+        </div>
       </div>
 
       <div className="quick-contact" aria-label="Patient contact summary">

@@ -79,6 +79,14 @@ function parseList(value: string) {
     .filter(Boolean);
 }
 
+function todayDateInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function buildPayload(form: PatientFormState): PatientPayload {
   return {
     first_name: form.first_name.trim(),
@@ -161,6 +169,24 @@ function FieldError({ message }: { message?: string }) {
   return message ? <span className="field-error">{message}</span> : null;
 }
 
+function ParsedListPreview({ value }: { value: string }) {
+  const items = parseList(value);
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="form-chip-preview" aria-label="Parsed entries preview">
+      {items.map((item) => (
+        <span className="chip" key={item}>
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function PatientFormPage({ mode }: PatientFormPageProps) {
   const { id } = useParams();
   const patientId = id ?? "";
@@ -169,6 +195,7 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
   const [form, setForm] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<FormErrors>({});
   const isEdit = mode === "edit";
+  const today = todayDateInputValue();
   const patientQuery = useQuery({
     queryKey: ["patient", patientId],
     queryFn: () => getPatient(patientId),
@@ -292,7 +319,11 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
                 value={form.date_of_birth}
                 onChange={(event) => updateField("date_of_birth", event.target.value)}
                 type="date"
+                max={today}
               />
+              <span className="field-helper">
+                Use the calendar picker or enter YYYY-MM-DD.
+              </span>
               <FieldError message={errors.date_of_birth} />
             </label>
 
@@ -370,7 +401,7 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
           <legend>Medical information</legend>
           <div className="form-grid">
             <label>
-              <span>Status</span>
+              <span>Patient status</span>
               <select
                 value={form.status}
                 onChange={(event) =>
@@ -378,9 +409,13 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
                 }
               >
                 <option value="active">Active</option>
-                <option value="needs_review">Needs review</option>
+                <option value="needs_review">Needs Review</option>
                 <option value="inactive">Inactive</option>
               </select>
+              <span className="field-helper">
+                Use status to indicate whether a patient is active, inactive, or
+                needs staff review.
+              </span>
             </label>
 
             <label>
@@ -400,12 +435,16 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
             </label>
 
             <label>
-              <span>Last visit</span>
+              <span>Last visit date</span>
               <input
                 value={form.last_visit_at}
                 onChange={(event) => updateField("last_visit_at", event.target.value)}
                 type="date"
+                max={today}
               />
+              <span className="field-helper">
+                Optional. Use the calendar picker or enter YYYY-MM-DD.
+              </span>
               <FieldError message={errors.last_visit_at} />
             </label>
 
@@ -416,6 +455,11 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
                 onChange={(event) => updateField("conditions", event.target.value)}
                 rows={3}
               />
+              <span className="field-helper">
+                Separate multiple conditions with commas, e.g. Hypertension,
+                Asthma.
+              </span>
+              <ParsedListPreview value={form.conditions} />
             </label>
 
             <label className="form-span-2">
@@ -425,6 +469,10 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
                 onChange={(event) => updateField("allergies", event.target.value)}
                 rows={3}
               />
+              <span className="field-helper">
+                Separate multiple allergies with commas, e.g. Penicillin, Latex.
+              </span>
+              <ParsedListPreview value={form.allergies} />
             </label>
           </div>
         </fieldset>

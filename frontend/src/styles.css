@@ -393,6 +393,12 @@ tbody tr:last-child td {
   gap: 7px;
 }
 
+.patient-hero__actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .quick-contact {
   padding: 14px 16px;
   background: #ffffff;
@@ -652,6 +658,20 @@ tbody tr:last-child td {
   font-weight: 800;
 }
 
+.field-helper {
+  color: #64717d;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.form-chip-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
@@ -724,6 +744,10 @@ tbody tr:last-child td {
   .patient-hero {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .patient-hero__actions {
+    justify-items: stretch;
   }
 
   .patient-hero h1 {

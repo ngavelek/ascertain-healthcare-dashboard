@@ -517,6 +517,41 @@ flowchart TD
 
 ---
 
+### 11. Patient form UX polish
+
+**Commit:** `polish: clarify patient form status and medical inputs`
+
+**What changed**
+
+* Manual UX review found unclear patient form inputs.
+* Clarified status, date, conditions, and allergy fields with human-readable labels and helper text.
+* Added lightweight parsed-entry preview chips for comma-separated conditions and allergies.
+* Moved the detail-page edit action next to the status badge so status changes are easier to discover.
+
+**Why it mattered**
+
+* Improved workflow usability without changing the backend data shape or core architecture.
+* Made status changes, date entry, and medical-list entry easier to understand during manual testing.
+
+**Requirement coverage**
+
+* Create/edit patient form clarity.
+* Patient detail edit discoverability.
+* Existing validation and submission behavior preserved.
+
+**Verification**
+
+* `cd frontend && npm run build && npm run lint && cd ..`
+* `cd backend && source .venv/bin/activate 2>/dev/null || true && python -m pytest -q && cd ..`
+* `git status`
+* `git diff --stat`
+
+**Current architecture impact**
+
+No architecture change. This is a presentation-layer polish pass over the existing patient CRUD workflow.
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

@@ -552,6 +552,37 @@ No architecture change. This is a presentation-layer polish pass over the existi
 
 ---
 
+### 12. Patient directory as primary dashboard
+
+**Commit:** `polish: make patient directory the primary dashboard`
+
+**What changed**
+
+* Manual UX review found the empty dashboard added friction before the useful workflow.
+* `/` now routes directly to `/patients`.
+* Removed the unused Dashboard navigation item and deleted the unused home page component.
+
+**Why it mattered**
+
+* The patient directory is treated as the primary operational dashboard.
+* Reviewers and users now land directly on search, filtering, sorting, pagination, and patient record navigation.
+
+**Requirement coverage**
+
+* `/patients`, `/patients/:id`, `/patients/new`, `/patients/:id/edit`, and the 404 route remain intact.
+* App branding remains `Ascertain Healthcare Dashboard`.
+
+**Verification**
+
+* `cd frontend && npm run build && npm run lint && cd ..`
+* `cd backend && source .venv/bin/activate && python -m pytest -q && cd ..`
+
+**Current architecture impact**
+
+No backend or data model change. This is a routing/navigation polish pass that makes the patient directory the default operational surface.
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

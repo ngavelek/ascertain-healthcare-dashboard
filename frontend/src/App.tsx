@@ -1,7 +1,6 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./components/AppLayout";
-import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PatientDetailPage } from "./pages/PatientDetailPage";
 import { PatientFormPage } from "./pages/PatientFormPage";
@@ -11,7 +10,7 @@ export function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/patients" replace />} />
         <Route path="/patients" element={<PatientsPage />} />
         <Route path="/patients/new" element={<PatientFormPage mode="create" />} />
         <Route path="/patients/:id" element={<PatientDetailPage />} />

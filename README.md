@@ -26,16 +26,14 @@ The backend creates tables on startup and seeds 120 synthetic patients when the 
 ## Suggested Reviewer Path
 
 1. Start the app with `docker compose up --build`.
-2. Open `http://localhost:5173`.
-3. View the dashboard home.
-4. Go to the patient list.
-5. Search, filter by status, sort, and paginate.
-6. Open a patient detail page.
-7. Add a patient note.
-8. View the generated patient summary.
-9. Create a new patient.
-10. Edit the patient, including status, allergies, conditions, date of birth, and last visit date.
-11. Confirm API docs at `http://localhost:8000/docs`.
+2. Open the patient directory at `http://localhost:5173/patients`.
+3. Search, filter by status, sort, and paginate.
+4. Open a patient detail page.
+5. Add a patient note.
+6. View the generated patient summary.
+7. Create a new patient.
+8. Edit the patient, including status, allergies, conditions, date of birth, and last visit date.
+9. Confirm API docs at `http://localhost:8000/docs`.
 
 ## Local Development
 

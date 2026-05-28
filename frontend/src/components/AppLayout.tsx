@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { LayoutDashboard, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 export function AppLayout({ children }: PropsWithChildren) {
@@ -20,10 +20,6 @@ export function AppLayout({ children }: PropsWithChildren) {
       <div className="app-body">
         <aside className="sidebar">
           <nav className="side-nav" aria-label="Primary navigation">
-            <NavLink to="/" end>
-              <LayoutDashboard size={18} aria-hidden="true" />
-              <span>Dashboard</span>
-            </NavLink>
             <NavLink to="/patients">
               <Users size={18} aria-hidden="true" />
               <span>Patients</span>
@@ -36,4 +32,3 @@ export function AppLayout({ children }: PropsWithChildren) {
     </div>
   );
 }
-

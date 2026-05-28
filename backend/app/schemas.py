@@ -2,7 +2,7 @@ import re
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 PatientStatus = Literal["active", "needs_review", "inactive"]
 
@@ -93,6 +93,12 @@ def strip_note_content(value: str) -> str:
     if not cleaned:
         raise ValueError("note content must not be blank")
     return cleaned
+
+
+def validate_note_created_at(value: datetime | None) -> datetime | None:
+    if value is not None and value.date() > date.today():
+        raise ValueError("note timestamp cannot be in the future")
+    return value
 
 
 class PatientBase(BaseModel):
@@ -212,8 +218,13 @@ class PatientStats(BaseModel):
 
 class PatientNoteCreate(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
+    created_at: datetime | None = Field(
+        default=None,
+        validation_alias=AliasChoices("created_at", "timestamp"),
+    )
 
     _strip_content = field_validator("content")(strip_note_content)
+    _validate_created_at = field_validator("created_at")(validate_note_created_at)
 
 
 class PatientNoteRead(BaseModel):

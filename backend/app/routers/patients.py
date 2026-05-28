@@ -242,6 +242,8 @@ def create_patient_note(
 ) -> PatientNote:
     get_patient_or_404(db, patient_id)
     note = PatientNote(patient_id=patient_id, content=payload.content)
+    if payload.created_at is not None:
+        note.created_at = payload.created_at
     db.add(note)
     db.commit()
     db.refresh(note)

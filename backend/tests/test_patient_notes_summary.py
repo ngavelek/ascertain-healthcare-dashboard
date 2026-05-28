@@ -28,12 +28,16 @@ def test_create_list_and_delete_patient_note() -> None:
 
     create_response = client.post(
         f"/patients/{patient_id}/notes",
-        json={"content": "Blood pressure improved after medication adjustment."},
+        json={
+            "content": "Blood pressure improved after medication adjustment.",
+            "timestamp": "2026-05-27T14:30:00Z",
+        },
     )
     assert create_response.status_code == 201
     note = create_response.json()
     assert note["patient_id"] == patient_id
     assert note["content"] == "Blood pressure improved after medication adjustment."
+    assert note["created_at"].startswith("2026-05-27T14:30:00")
 
     list_response = client.get(f"/patients/{patient_id}/notes")
     assert list_response.status_code == 200
@@ -65,6 +69,18 @@ def test_note_validation_and_missing_patient_errors() -> None:
     )
     assert missing_response.status_code == 404
     assert "not found" in missing_response.json()["detail"]
+
+    future_timestamp_response = client.post(
+        f"/patients/{patient_id}/notes",
+        json={
+            "content": "Follow-up scheduled.",
+            "timestamp": "2099-01-01T00:00:00Z",
+        },
+    )
+    assert future_timestamp_response.status_code == 422
+    assert "note timestamp cannot be in the future" in str(
+        future_timestamp_response.json()["detail"]
+    )
 
 
 def test_delete_note_for_wrong_patient_does_not_delete_note() -> None:

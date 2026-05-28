@@ -87,6 +87,8 @@ GET    /patients/{id}/summary
 GET    /patients/stats
 ```
 
+`POST /patients/{id}/notes` accepts note `content` and an optional `created_at` or `timestamp`; if omitted, the backend records the server timestamp.
+
 `GET /patients` supports backend-owned:
 
 ```text

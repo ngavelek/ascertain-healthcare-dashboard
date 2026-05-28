@@ -185,6 +185,13 @@ button {
   color: #ffffff;
 }
 
+.button--danger-outline {
+  width: fit-content;
+  background: #ffffff;
+  color: #b42318;
+  border: 1px solid #d92d20;
+}
+
 .metrics-dashboard {
   display: grid;
   grid-template-columns: repeat(5, minmax(120px, 1fr));
@@ -612,6 +619,12 @@ tbody tr:last-child td {
   border-radius: 8px;
 }
 
+.danger-zone {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -928,6 +941,10 @@ tbody tr:last-child td {
   .form-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .danger-zone {
+    justify-content: stretch;
   }
 
   .confirmation-actions {

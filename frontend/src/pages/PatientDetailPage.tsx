@@ -417,15 +417,6 @@ export function PatientDetailPage() {
             <Pencil size={18} aria-hidden="true" />
             <span>Edit patient</span>
           </Link>
-          <button
-            className="button button--danger"
-            disabled={deletePatientMutation.isPending}
-            type="button"
-            onClick={handleDeletePatient}
-          >
-            <Trash2 size={18} aria-hidden="true" />
-            <span>{deletePatientMutation.isPending ? "Deleting" : "Delete patient"}</span>
-          </button>
         </div>
       </div>
 
@@ -507,6 +498,18 @@ export function PatientDetailPage() {
 
       <SummaryPanel patientId={patient.id} />
       <NotesPanel patientId={patient.id} />
+
+      <div className="danger-zone">
+        <button
+          className="button button--danger-outline"
+          disabled={deletePatientMutation.isPending}
+          type="button"
+          onClick={handleDeletePatient}
+        >
+          <Trash2 size={18} aria-hidden="true" />
+          <span>{deletePatientMutation.isPending ? "Deleting" : "Delete patient"}</span>
+        </button>
+      </div>
     </section>
   );
 }

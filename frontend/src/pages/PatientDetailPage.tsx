@@ -13,11 +13,12 @@ import {
   Send,
   Trash2,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
   ApiError,
   createPatientNote,
+  deletePatient,
   deletePatientNote,
   getPatient,
   getPatientNotes,
@@ -243,6 +244,14 @@ function NotesPanel({ patientId }: { patientId: string }) {
     createNoteMutation.mutate(trimmed);
   }
 
+  function handleDeleteNote(noteId: string) {
+    if (!window.confirm("Delete this note? This cannot be undone.")) {
+      return;
+    }
+
+    deleteNoteMutation.mutate(noteId);
+  }
+
   const notes = notesQuery.data ?? [];
 
   return (
@@ -299,10 +308,14 @@ function NotesPanel({ patientId }: { patientId: string }) {
               key={note.id}
               note={note}
               isDeleting={deleteNoteMutation.isPending}
-              onDelete={(noteId) => deleteNoteMutation.mutate(noteId)}
+              onDelete={handleDeleteNote}
             />
           ))}
         </ul>
+      ) : null}
+
+      {deleteNoteMutation.isError ? (
+        <p className="form-error">{getDetailErrorMessage(deleteNoteMutation.error)}</p>
       ) : null}
     </section>
   );
@@ -311,10 +324,26 @@ function NotesPanel({ patientId }: { patientId: string }) {
 export function PatientDetailPage() {
   const { id } = useParams();
   const patientId = id ?? "";
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const patientQuery = useQuery({
     queryKey: ["patient", patientId],
     queryFn: () => getPatient(patientId),
     enabled: Boolean(patientId),
+  });
+  const deletePatientMutation = useMutation({
+    mutationFn: (deletedPatientId: string) => deletePatient(deletedPatientId),
+    onSuccess: async (_data, deletedPatientId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["patients"] }),
+        queryClient.invalidateQueries({ queryKey: ["patient-stats"] }),
+      ]);
+      queryClient.removeQueries({ queryKey: ["patient", deletedPatientId] });
+      queryClient.removeQueries({ queryKey: ["patient-notes", deletedPatientId] });
+      queryClient.removeQueries({ queryKey: ["patient-summary", deletedPatientId] });
+      navigate("/patients");
+    },
   });
 
   if (!patientId) {
@@ -349,6 +378,15 @@ export function PatientDetailPage() {
 
   const patient = patientQuery.data;
 
+  function handleDeletePatient() {
+    deletePatientMutation.reset();
+    setIsDeleteDialogOpen(true);
+  }
+
+  function confirmDeletePatient() {
+    deletePatientMutation.mutate(patient.id);
+  }
+
   return (
     <section className="page-section">
       <div className="page-toolbar">
@@ -379,8 +417,72 @@ export function PatientDetailPage() {
             <Pencil size={18} aria-hidden="true" />
             <span>Edit patient</span>
           </Link>
+          <button
+            className="button button--danger"
+            disabled={deletePatientMutation.isPending}
+            type="button"
+            onClick={handleDeletePatient}
+          >
+            <Trash2 size={18} aria-hidden="true" />
+            <span>{deletePatientMutation.isPending ? "Deleting" : "Delete patient"}</span>
+          </button>
         </div>
       </div>
+
+      {deletePatientMutation.isError ? (
+        <div className="state-panel state-panel--error">
+          {getDetailErrorMessage(deletePatientMutation.error)}
+        </div>
+      ) : null}
+
+      {isDeleteDialogOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div
+            aria-labelledby="delete-patient-title"
+            aria-modal="true"
+            className="confirmation-dialog"
+            role="dialog"
+          >
+            <div>
+              <p className="eyebrow">Confirm deletion</p>
+              <h2 id="delete-patient-title">Delete {fullName(patient)}?</h2>
+              <p>
+                This will remove the patient record and all notes. This action
+                cannot be undone.
+              </p>
+            </div>
+            {deletePatientMutation.isError ? (
+              <p className="form-error">
+                {getDetailErrorMessage(deletePatientMutation.error)}
+              </p>
+            ) : null}
+            <div className="confirmation-actions">
+              <button
+                className="button button--secondary"
+                disabled={deletePatientMutation.isPending}
+                type="button"
+                onClick={() => {
+                  deletePatientMutation.reset();
+                  setIsDeleteDialogOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="button button--danger"
+                disabled={deletePatientMutation.isPending}
+                type="button"
+                onClick={confirmDeletePatient}
+              >
+                <Trash2 size={18} aria-hidden="true" />
+                <span>
+                  {deletePatientMutation.isPending ? "Deleting" : "Delete patient"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="quick-contact" aria-label="Patient contact summary">
         <span>

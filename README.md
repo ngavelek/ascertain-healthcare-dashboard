@@ -30,11 +30,12 @@ The backend creates tables on startup and seeds 120 synthetic patients when the 
 3. View the patient operational dashboard.
 4. Search, filter by status, sort, and paginate through patients.
 5. Open a patient detail page.
-6. Add a clinical note.
-7. View the generated patient summary.
+6. View the generated patient summary.
+7. Add and delete a clinical note.
 8. Create a new patient.
 9. Edit patient status, allergies, conditions, date of birth, and last visit date.
-10. Confirm API docs at `http://localhost:8000/docs`.
+10. Delete a patient after confirming the delete dialog.
+11. Confirm API docs at `http://localhost:8000/docs`.
 
 ## Verification
 

@@ -180,6 +180,11 @@ button {
   border: 1px solid #c9d4dc;
 }
 
+.button--danger {
+  background: #b42318;
+  color: #ffffff;
+}
+
 .metrics-dashboard {
   display: grid;
   grid-template-columns: repeat(5, minmax(120px, 1fr));
@@ -781,6 +786,44 @@ tbody tr:last-child td {
   align-items: center;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(23 33 43 / 62%);
+}
+
+.confirmation-dialog {
+  display: grid;
+  gap: 18px;
+  width: min(480px, 100%);
+  padding: 22px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgb(23 33 43 / 28%);
+}
+
+.confirmation-dialog h2 {
+  margin: 0;
+  color: #17212b;
+  font-size: 1.25rem;
+}
+
+.confirmation-dialog p:last-child {
+  margin: 10px 0 0;
+  color: #52606d;
+  line-height: 1.5;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 @media (max-width: 920px) {
   .app-body {
     grid-template-columns: 1fr;
@@ -885,5 +928,9 @@ tbody tr:last-child td {
   .form-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .confirmation-actions {
+    flex-direction: column-reverse;
   }
 }

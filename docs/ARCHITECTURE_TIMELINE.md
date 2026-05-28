@@ -419,6 +419,56 @@ sequenceDiagram
 
 ---
 
+### 9. Docker Compose local setup
+
+**Commit:** `chore(docker): add Docker Compose local setup`
+
+**What changed**
+
+* Added root `docker-compose.yml` with PostgreSQL, backend, and frontend services.
+* Added backend and frontend Dockerfiles.
+* Added Docker ignore files so virtualenvs, node modules, build output, caches, and local databases stay out of images.
+* Added seed configuration values to `.env.example`.
+
+**Why it mattered**
+
+* Created the expected one-command local review path.
+* Moved the app from separate local processes toward a reproducible full-stack setup.
+* Kept PostgreSQL as the Docker-backed database while preserving SQLite for lightweight non-Docker backend tests.
+
+**Requirement coverage**
+
+* Working Compose definition for frontend, backend, and PostgreSQL.
+* Backend Dockerfile.
+* Frontend Dockerfile.
+* PostgreSQL service.
+* `.env.example` includes required runtime variables.
+
+**Verification**
+
+* `docker compose config` passed.
+* `docker compose up --build` was attempted but Docker daemon was unavailable in this environment: `Cannot connect to the Docker daemon at unix:///Users/ngavelek/.docker/run/docker.sock. Is the docker daemon running?`
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The intended local runtime is now containerized as three services. Full runtime verification needs Docker Desktop or another Docker daemon running locally, then `docker compose up --build`.
+
+```mermaid
+flowchart LR
+  Browser[Browser] --> Frontend[frontend: Vite on 5173]
+  Frontend --> Backend[backend: FastAPI on 8000]
+  Backend --> DB[(db: PostgreSQL on 5432)]
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

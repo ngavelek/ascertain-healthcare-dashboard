@@ -253,6 +253,55 @@ flowchart TD
 
 ---
 
+### 6. Patient detail view
+
+**Commit:** `feat(web): add patient detail page`
+
+**What changed**
+
+* Added a data-backed `/patients/:id` page.
+* Rendered patient demographics, contact details, status, last visit, conditions, and allergies.
+* Added detail-specific loading, error, and not-found states.
+* Added navigation back to the directory and forward to edit.
+
+**Why it mattered**
+
+* Completed the read side of the patient workflow after directory selection.
+* Made the record view useful enough for notes and generated summaries to attach in the next milestone.
+* Preserved a simple API boundary by reusing `GET /patients/{id}` through the typed client.
+
+**Requirement coverage**
+
+* Patient detail page.
+* Meaningful loading, error, and not-found states.
+* Responsive detail layout.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend has a complete list-to-detail read path. Patient detail state is fetched independently by ID, which keeps the URL route refreshable and avoids relying on the previous directory page cache.
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Directory as Patient Directory
+  participant Detail as Patient Detail Route
+  participant API as FastAPI
+
+  User->>Directory: Select patient
+  Directory->>Detail: /patients/:id
+  Detail->>API: GET /patients/{id}
+  API-->>Detail: Patient record
+  Detail-->>User: Demographics, contact, clinical profile
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

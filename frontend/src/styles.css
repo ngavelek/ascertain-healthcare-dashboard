@@ -587,6 +587,77 @@ tbody tr:last-child td {
   line-height: 1.55;
 }
 
+.patient-form {
+  display: grid;
+  gap: 18px;
+}
+
+.patient-form fieldset {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid #d6dde3;
+  border-radius: 8px;
+}
+
+.patient-form legend {
+  padding: 0 6px;
+  color: #17212b;
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 6px;
+  color: #52606d;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #b8c4ce;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f2933;
+}
+
+.form-grid textarea {
+  min-height: 92px;
+  padding: 10px 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.field-error {
+  color: #9f1d1d;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 @media (max-width: 920px) {
   .app-body {
     grid-template-columns: 1fr;
@@ -664,6 +735,19 @@ tbody tr:last-child td {
   }
 
   .note-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-span-2 {
+    grid-column: auto;
+  }
+
+  .form-actions {
     align-items: stretch;
     flex-direction: column;
   }

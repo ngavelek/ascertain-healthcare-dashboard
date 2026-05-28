@@ -364,6 +364,61 @@ erDiagram
 
 ---
 
+### 8. Patient create and edit forms
+
+**Commit:** `feat(web): add patient create and edit forms`
+
+**What changed**
+
+* Replaced the form placeholder with create and edit workflows.
+* Added client-side validation for required names, dates, email format, state codes, blood type, and future dates.
+* Wired create and update mutations to the existing patient CRUD API.
+* Added user-facing server/network error display and route-aware loading/error states for edit mode.
+* Invalidated patient list and detail queries after saves.
+
+**Why it mattered**
+
+* Completed the full patient CRUD workflow from the browser.
+* Kept validation layered: fast client checks first, backend validation still authoritative.
+* Preserved the simple API contract by posting the same payload shape the backend already validates.
+
+**Requirement coverage**
+
+* `/patients/new`
+* `/patients/:id/edit`
+* Create/edit patient forms.
+* Client-side and server-side validation.
+* Network and validation error handling.
+
+**Verification**
+
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The frontend now supports all patient CRUD operations. Form state is local to the route, server state remains in TanStack Query, and successful mutations refresh the cached list/detail data before returning to the patient record.
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Form as Create/Edit Form
+  participant Client as API Client
+  participant API as FastAPI
+  participant Cache as TanStack Query Cache
+
+  User->>Form: Submit patient fields
+  Form->>Form: Client validation
+  Form->>Client: POST or PUT /patients
+  Client->>API: Persist patient
+  API-->>Client: Patient
+  Client-->>Cache: Invalidate list/detail queries
+  Form-->>User: Navigate to patient record
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

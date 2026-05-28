@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db import Base, SessionLocal, engine
 from app import models  # noqa: F401 --> forces Python to load models.py, so SQLAlchemy knows the Patient table exists before it tries to create tables.
+from app.routers.patients import router as patients_router
 from app.seed import seed_patients
 
 
@@ -37,3 +38,6 @@ app.add_middleware(
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "ok"}
+
+
+app.include_router(patients_router)

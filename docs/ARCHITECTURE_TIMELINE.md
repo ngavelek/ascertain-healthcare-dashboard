@@ -108,6 +108,58 @@ erDiagram
 
 ---
 
+### 3. Patient CRUD API
+
+**Commit:** `feat(api): implement patient CRUD endpoints`
+
+**What changed**
+
+* Added Pydantic schemas for patient create, update, read, and paginated list responses.
+* Added `/patients` CRUD routes backed by SQLAlchemy sessions.
+* Added backend-owned pagination, search, status filtering, and sorting.
+* Added API tests for list behavior, validation errors, not-found responses, and create/read/update/delete.
+
+**Why it mattered**
+
+* Established the main API contract the React app will consume.
+* Kept scalable list behavior on the backend instead of forcing the browser to load every patient.
+* Made server validation and error responses explicit before frontend forms depend on them.
+
+**Requirement coverage**
+
+* `GET /patients`
+* `GET /patients/{id}`
+* `POST /patients`
+* `PUT /patients/{id}`
+* `DELETE /patients/{id}`
+* Appropriate status codes for create, delete, validation, and missing records.
+* Backend tests for important patient API behavior.
+
+**Verification**
+
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+
+**Current architecture impact**
+
+The backend now exposes a reviewer-facing patient API over the seeded database. The frontend can depend on paginated `items`, `total`, `page`, `page_size`, and `pages` metadata instead of inventing client-only list behavior.
+
+```mermaid
+sequenceDiagram
+  participant Web as Future React Frontend
+  participant API as FastAPI Patients Router
+  participant DB as SQLAlchemy Database Session
+
+  Web->>API: GET /patients?page=1&search=Ava&sort_by=name
+  API->>DB: Filter, count, order, limit
+  DB-->>API: Patients page + total count
+  API-->>Web: PatientListResponse
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

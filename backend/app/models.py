@@ -48,6 +48,16 @@ class Patient(Base):
         nullable=False,
     )
 
+    @property
+    def age(self) -> int:
+        today = date.today()
+        years = today.year - self.date_of_birth.year
+        had_birthday = (today.month, today.day) >= (
+            self.date_of_birth.month,
+            self.date_of_birth.day,
+        )
+        return years if had_birthday else years - 1
+
 
 Index("ix_patients_last_name", Patient.last_name)
 Index("ix_patients_status", Patient.status)

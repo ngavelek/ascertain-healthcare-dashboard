@@ -55,3 +55,20 @@ export type PatientPayload = {
   last_visit_at?: string | null;
 };
 
+export type PatientNote = {
+  id: string;
+  patient_id: string;
+  content: string;
+  created_at: string;
+};
+
+export type PatientNotePayload = {
+  content: string;
+};
+
+export type PatientSummary = {
+  patient_id: string;
+  generated_at: string;
+  summary: string;
+  highlights: string[];
+};

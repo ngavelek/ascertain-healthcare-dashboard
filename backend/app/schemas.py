@@ -56,6 +56,13 @@ def normalize_string_list(value: list[str] | None) -> list[str]:
     return [str(item).strip() for item in value if str(item).strip()]
 
 
+def strip_note_content(value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError("note content must not be blank")
+    return cleaned
+
+
 class PatientBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=80)
     last_name: str = Field(min_length=1, max_length=80)
@@ -157,3 +164,25 @@ class PatientListResponse(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+class PatientNoteCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)
+
+    _strip_content = field_validator("content")(strip_note_content)
+
+
+class PatientNoteRead(BaseModel):
+    id: str
+    patient_id: str
+    content: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PatientSummary(BaseModel):
+    patient_id: str
+    generated_at: datetime
+    summary: str
+    highlights: list[str]

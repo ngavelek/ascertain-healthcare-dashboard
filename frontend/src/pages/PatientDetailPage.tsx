@@ -1,19 +1,36 @@
-import { useQuery } from "@tanstack/react-query";
+import { FormEvent, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CalendarDays,
+  ClipboardList,
   Droplets,
+  FileText,
   Mail,
   MapPin,
   Pencil,
   Phone,
+  Send,
+  Trash2,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
-import { ApiError, getPatient } from "../api/client";
-import type { Patient } from "../api/types";
+import {
+  ApiError,
+  createPatientNote,
+  deletePatientNote,
+  getPatient,
+  getPatientNotes,
+  getPatientSummary,
+} from "../api/client";
+import type { Patient, PatientNote } from "../api/types";
 import { StatusBadge } from "../components/StatusBadge";
-import { formatDate, fullName, patientLocation } from "../utils/format";
+import {
+  formatDate,
+  formatDateTime,
+  fullName,
+  patientLocation,
+} from "../utils/format";
 
 function getDetailErrorMessage(error: unknown) {
   if (error instanceof ApiError && error.status === 404) {
@@ -113,6 +130,184 @@ function MedicalDetails({ patient }: { patient: Patient }) {
   );
 }
 
+function SummaryPanel({ patientId }: { patientId: string }) {
+  const summaryQuery = useQuery({
+    queryKey: ["patient-summary", patientId],
+    queryFn: () => getPatientSummary(patientId),
+  });
+
+  return (
+    <section className="summary-panel">
+      <div className="section-title">
+        <ClipboardList size={18} aria-hidden="true" />
+        <h2>Generated summary</h2>
+      </div>
+
+      {summaryQuery.isLoading ? (
+        <div className="state-panel">Loading summary</div>
+      ) : null}
+
+      {summaryQuery.isError ? (
+        <div className="state-panel state-panel--error">
+          {getDetailErrorMessage(summaryQuery.error)}
+        </div>
+      ) : null}
+
+      {summaryQuery.data ? (
+        <div className="summary-content">
+          <p>{summaryQuery.data.summary}</p>
+          <ul className="highlight-list">
+            {summaryQuery.data.highlights.map((highlight) => (
+              <li key={highlight}>{highlight}</li>
+            ))}
+          </ul>
+          <span className="timestamp">
+            Generated {formatDateTime(summaryQuery.data.generated_at)}
+          </span>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function NoteItem({
+  note,
+  onDelete,
+  isDeleting,
+}: {
+  note: PatientNote;
+  onDelete: (noteId: string) => void;
+  isDeleting: boolean;
+}) {
+  return (
+    <li className="note-item">
+      <div>
+        <p>{note.content}</p>
+        <span className="timestamp">{formatDateTime(note.created_at)}</span>
+      </div>
+      <button
+        className="icon-button"
+        disabled={isDeleting}
+        type="button"
+        onClick={() => onDelete(note.id)}
+        aria-label="Delete note"
+        title="Delete note"
+      >
+        <Trash2 size={17} aria-hidden="true" />
+      </button>
+    </li>
+  );
+}
+
+function NotesPanel({ patientId }: { patientId: string }) {
+  const queryClient = useQueryClient();
+  const [content, setContent] = useState("");
+  const [localError, setLocalError] = useState("");
+  const notesQuery = useQuery({
+    queryKey: ["patient-notes", patientId],
+    queryFn: () => getPatientNotes(patientId),
+  });
+
+  const createNoteMutation = useMutation({
+    mutationFn: (noteContent: string) =>
+      createPatientNote(patientId, { content: noteContent }),
+    onSuccess: async () => {
+      setContent("");
+      setLocalError("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["patient-notes", patientId] }),
+        queryClient.invalidateQueries({ queryKey: ["patient-summary", patientId] }),
+      ]);
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => deletePatientNote(patientId, noteId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["patient-notes", patientId] }),
+        queryClient.invalidateQueries({ queryKey: ["patient-summary", patientId] }),
+      ]);
+    },
+  });
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = content.trim();
+
+    if (!trimmed) {
+      setLocalError("Note content is required.");
+      return;
+    }
+
+    createNoteMutation.mutate(trimmed);
+  }
+
+  const notes = notesQuery.data ?? [];
+
+  return (
+    <section className="notes-panel">
+      <div className="section-title">
+        <FileText size={18} aria-hidden="true" />
+        <h2>Notes</h2>
+      </div>
+
+      <form className="note-form" onSubmit={handleSubmit}>
+        <label>
+          <span className="sr-only">New note</span>
+          <textarea
+            value={content}
+            onChange={(event) => {
+              setContent(event.target.value);
+              setLocalError("");
+            }}
+            maxLength={2000}
+            rows={4}
+            placeholder="Add a clinical note"
+          />
+        </label>
+        {localError ? <p className="form-error">{localError}</p> : null}
+        {createNoteMutation.isError ? (
+          <p className="form-error">{getDetailErrorMessage(createNoteMutation.error)}</p>
+        ) : null}
+        <button
+          className="button button--primary"
+          type="submit"
+          disabled={createNoteMutation.isPending}
+        >
+          <Send size={17} aria-hidden="true" />
+          <span>{createNoteMutation.isPending ? "Saving" : "Add note"}</span>
+        </button>
+      </form>
+
+      {notesQuery.isLoading ? <div className="state-panel">Loading notes</div> : null}
+
+      {notesQuery.isError ? (
+        <div className="state-panel state-panel--error">
+          {getDetailErrorMessage(notesQuery.error)}
+        </div>
+      ) : null}
+
+      {!notesQuery.isLoading && !notesQuery.isError && notes.length === 0 ? (
+        <div className="state-panel">No notes recorded.</div>
+      ) : null}
+
+      {notes.length ? (
+        <ul className="note-list">
+          {notes.map((note) => (
+            <NoteItem
+              key={note.id}
+              note={note}
+              isDeleting={deleteNoteMutation.isPending}
+              onDelete={(noteId) => deleteNoteMutation.mutate(noteId)}
+            />
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export function PatientDetailPage() {
   const { id } = useParams();
   const patientId = id ?? "";
@@ -205,6 +400,9 @@ export function PatientDetailPage() {
         <ContactDetails patient={patient} />
         <MedicalDetails patient={patient} />
       </div>
+
+      <SummaryPanel patientId={patient.id} />
+      <NotesPanel patientId={patient.id} />
     </section>
   );
 }

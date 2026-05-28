@@ -6,6 +6,14 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export function fullName(patient: Pick<Patient, "first_name" | "last_name">) {
   return `${patient.first_name} ${patient.last_name}`;
 }
@@ -18,6 +26,10 @@ export function formatDate(value: string | null) {
   return dateFormatter.format(new Date(`${value}T00:00:00`));
 }
 
+export function formatDateTime(value: string) {
+  return dateTimeFormatter.format(new Date(value));
+}
+
 export function formatStatus(status: PatientStatus) {
   return status
     .split("_")
@@ -28,4 +40,3 @@ export function formatStatus(status: PatientStatus) {
 export function patientLocation(patient: Patient) {
   return [patient.city, patient.state].filter(Boolean).join(", ");
 }
-

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from math import ceil
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -5,8 +6,16 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Patient
-from app.schemas import PatientCreate, PatientListResponse, PatientRead, PatientUpdate
+from app.models import Patient, PatientNote
+from app.schemas import (
+    PatientCreate,
+    PatientListResponse,
+    PatientNoteCreate,
+    PatientNoteRead,
+    PatientRead,
+    PatientSummary,
+    PatientUpdate,
+)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
@@ -27,6 +36,62 @@ def get_patient_or_404(db: Session, patient_id: str) -> Patient:
             detail=f"Patient {patient_id} was not found.",
         )
     return patient
+
+
+def get_note_or_404(db: Session, patient_id: str, note_id: str) -> PatientNote:
+    note = db.scalar(
+        select(PatientNote).where(
+            PatientNote.id == note_id,
+            PatientNote.patient_id == patient_id,
+        )
+    )
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Note {note_id} was not found for patient {patient_id}.",
+        )
+    return note
+
+
+def format_field_list(values: list[str], empty: str = "none recorded") -> str:
+    return ", ".join(values) if values else empty
+
+
+def build_patient_summary(patient: Patient, notes: list[PatientNote]) -> PatientSummary:
+    full_name = f"{patient.first_name} {patient.last_name}"
+    status_text = patient.status.replace("_", " ")
+    conditions = format_field_list(patient.conditions)
+    allergies = format_field_list(patient.allergies)
+    last_visit = (
+        patient.last_visit_at.isoformat() if patient.last_visit_at else "not recorded"
+    )
+    note_count = len(notes)
+    latest_note = notes[0].content if notes else "No clinical notes have been recorded."
+
+    summary = (
+        f"{full_name} is a {patient.age}-year-old patient with status "
+        f"{status_text}. Last visit is {last_visit}. Active conditions: "
+        f"{conditions}. Allergies: {allergies}. Latest note: {latest_note}"
+    )
+
+    highlights = [
+        f"Status: {status_text}.",
+        f"Last visit: {last_visit}.",
+        f"{note_count} note{'s' if note_count != 1 else ''} recorded.",
+    ]
+
+    if patient.status == "needs_review":
+        highlights.append("Care team review is currently flagged.")
+
+    if patient.allergies:
+        highlights.append(f"Allergy review: {allergies}.")
+
+    return PatientSummary(
+        patient_id=patient.id,
+        generated_at=datetime.now(timezone.utc),
+        summary=summary,
+        highlights=highlights,
+    )
 
 
 def apply_patient_filters(
@@ -138,3 +203,63 @@ def delete_patient(patient_id: str, db: Session = Depends(get_db)) -> Response:
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
+@router.post(
+    "/{patient_id}/notes",
+    response_model=PatientNoteRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_patient_note(
+    patient_id: str,
+    payload: PatientNoteCreate,
+    db: Session = Depends(get_db),
+) -> PatientNote:
+    get_patient_or_404(db, patient_id)
+    note = PatientNote(patient_id=patient_id, content=payload.content)
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+@router.get("/{patient_id}/notes", response_model=list[PatientNoteRead])
+def list_patient_notes(
+    patient_id: str,
+    db: Session = Depends(get_db),
+) -> list[PatientNote]:
+    get_patient_or_404(db, patient_id)
+    return db.scalars(
+        select(PatientNote)
+        .where(PatientNote.patient_id == patient_id)
+        .order_by(PatientNote.created_at.desc(), PatientNote.id.desc())
+    ).all()
+
+
+@router.delete(
+    "/{patient_id}/notes/{note_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_patient_note(
+    patient_id: str,
+    note_id: str,
+    db: Session = Depends(get_db),
+) -> Response:
+    get_patient_or_404(db, patient_id)
+    note = get_note_or_404(db, patient_id, note_id)
+    db.delete(note)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{patient_id}/summary", response_model=PatientSummary)
+def get_patient_summary(
+    patient_id: str,
+    db: Session = Depends(get_db),
+) -> PatientSummary:
+    patient = get_patient_or_404(db, patient_id)
+    notes = db.scalars(
+        select(PatientNote)
+        .where(PatientNote.patient_id == patient_id)
+        .order_by(PatientNote.created_at.desc(), PatientNote.id.desc())
+    ).all()
+    return build_patient_summary(patient, notes)

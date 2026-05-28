@@ -1,8 +1,8 @@
 from datetime import date, datetime
 from uuid import uuid4
 
-from sqlalchemy import Date, DateTime, Index, JSON, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, DateTime, ForeignKey, Index, JSON, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
@@ -48,6 +48,11 @@ class Patient(Base):
         nullable=False,
     )
 
+    notes: Mapped[list["PatientNote"]] = relationship(
+        back_populates="patient",
+        cascade="all, delete-orphan",
+    )
+
     @property
     def age(self) -> int:
         today = date.today()
@@ -62,3 +67,30 @@ class Patient(Base):
 Index("ix_patients_last_name", Patient.last_name)
 Index("ix_patients_status", Patient.status)
 Index("ix_patients_last_visit_at", Patient.last_visit_at)
+
+
+class PatientNote(Base):
+    __tablename__ = "patient_notes"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+    )
+    patient_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    patient: Mapped[Patient] = relationship(back_populates="notes")
+
+
+Index("ix_patient_notes_patient_id", PatientNote.patient_id)
+Index("ix_patient_notes_created_at", PatientNote.created_at)

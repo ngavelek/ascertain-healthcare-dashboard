@@ -2,7 +2,10 @@ import type {
   Patient,
   PatientListParams,
   PatientListResponse,
+  PatientNote,
+  PatientNotePayload,
   PatientPayload,
+  PatientSummary,
 } from "./types";
 
 const API_BASE_URL = (
@@ -102,3 +105,23 @@ export function deletePatient(id: string) {
   });
 }
 
+export function getPatientNotes(patientId: string) {
+  return request<PatientNote[]>(`/patients/${patientId}/notes`);
+}
+
+export function createPatientNote(patientId: string, payload: PatientNotePayload) {
+  return request<PatientNote>(`/patients/${patientId}/notes`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deletePatientNote(patientId: string, noteId: string) {
+  return request<void>(`/patients/${patientId}/notes/${noteId}`, {
+    method: "DELETE",
+  });
+}
+
+export function getPatientSummary(patientId: string) {
+  return request<PatientSummary>(`/patients/${patientId}/summary`);
+}

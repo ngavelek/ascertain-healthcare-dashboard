@@ -302,6 +302,68 @@ sequenceDiagram
 
 ---
 
+### 7. Patient notes and deterministic summaries
+
+**Commit:** `feat(api,web): add patient notes and generated summaries`
+
+**What changed**
+
+* Added a `patient_notes` table related to patients.
+* Added note create, list, and delete endpoints.
+* Added `GET /patients/{id}/summary` with deterministic patient-and-note summary logic.
+* Added backend tests for notes, validation, deletion cleanup, and summary output.
+* Added summary and notes panels to the patient detail page.
+
+**Why it mattered**
+
+* Completed the clinical context workflow around a patient record without adding external services.
+* Kept summaries explainable and locally runnable by deriving them from stored patient fields and notes.
+* Gave reviewers an end-to-end example of child-resource API design and UI mutation handling.
+
+**Requirement coverage**
+
+* `POST /patients/{id}/notes`
+* `GET /patients/{id}/notes`
+* `DELETE /patients/{id}/notes/{note_id}`
+* `GET /patients/{id}/summary`
+* Notes UI.
+* Generated summary UI.
+* Server-side validation and useful not-found messages for notes.
+
+**Verification**
+
+* `cd backend`
+* `source .venv/bin/activate 2>/dev/null || true`
+* `python -m pytest -q`
+* `python -m compileall -q app tests`
+* `cd frontend`
+* `npm run lint`
+* `npm run build`
+
+**Current architecture impact**
+
+The patient record now has a child-resource workflow. Notes are persisted in the database, summaries are derived at request time, and the frontend invalidates notes and summary queries together after note mutations.
+
+```mermaid
+erDiagram
+  PATIENT ||--o{ PATIENT_NOTE : has
+  PATIENT {
+    string id
+    string status
+    json conditions
+    json allergies
+    date last_visit_at
+  }
+  PATIENT_NOTE {
+    string id
+    string patient_id
+    text content
+    datetime created_at
+  }
+```
+
+---
+
 ## Backend Request Flow
 
 ```mermaid

@@ -445,7 +445,7 @@ export function PatientFormPage({ mode }: PatientFormPageProps) {
                 max={today}
               />
               <span className="field-helper">
-                Optional. Use the calendar picker or enter YYYY-MM-DD.
+                Optional. Use the calendar picker or enter MM-DD-YYYY.
               </span>
               <FieldError message={errors.last_visit_at} />
             </label>
